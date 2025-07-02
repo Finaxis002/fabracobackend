@@ -106,10 +106,9 @@ app.use('/ap/admin', superAdminRoute);
 
 
 
-app.use('/api', require('./routes/api'));
 
 // app.use(express.static(path.join(__dirname, "client/build")));
-// app.use(express.static(path.join(__dirname, "client")));
+app.use(express.static(path.join(__dirname, "client")));
 
 
 app.get("/", (req, res) => {
@@ -117,12 +116,7 @@ app.get("/", (req, res) => {
 });
 
 
-app.use(express.static(path.join(__dirname, "client/build")));
 
-
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
-})
 
 app.use((req, res, next) => {
   res.status(404).send('Route not found');
