@@ -114,7 +114,7 @@ app.use(express.static(path.join(__dirname, "client")));
 
 
 app.get("/", (req, res) => {
-  res.send("FCA - Fabrico Backend is running");
+  res.send("FCA - Fabrico Backend is running -> CI/CD testing");
 });
 
 
