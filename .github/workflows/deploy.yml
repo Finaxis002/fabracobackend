@@ -1,4 +1,4 @@
-name: Deploy Vite App to VPS
+name: Deploy Backend to VPS
 
 on:
   push:
@@ -9,28 +9,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📥 Checkout Code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: 🛠️ Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Install SSH key
+        uses: webfactory/ssh-agent@v0.8.0
         with:
-          node-version: '18'
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: 📦 Install Dependencies
-        run: npm install  # Changed to npm install instead of npm ci
+      - name: Add SSH Host Key to Known Hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
 
-      - name: 🏗️ Build Project
-        run: npm run build
+      - name: Deploy to VPS
+        run: |
+          rsync -avz --delete ./ root@${{ secrets.SERVER_IP }}:/home/fabracobackend
 
-      - name: 🚀 Deploy to VPS (/home/fabraco)
-        uses: easingthemes/ssh-deploy@main
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          REMOTE_HOST: ${{ secrets.SERVER_IP }}
-          REMOTE_USER: root
-          SOURCE: dist/
-          TARGET: /home/fabraco/dist
-          SCRIPT_AFTER: |
-            chown -R root:root /home/fabraco/dist
-            chmod -R 755 /home/fabraco/dist
+      - name: Restart backend with PM2
+        run: |
+          ssh root@${{ secrets.SERVER_IP }} << 'EOF'
+            cd /home/fabracobackend
+            npm install
+            pm2 restart fabracobe-backend || pm2 start server.js --name fabracobe-backend
+            pm2 save
+          EOF
