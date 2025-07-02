@@ -69,8 +69,6 @@ const authLimiter = rateLimit({
 app.use('/api/auth', authLimiter, loginRoute);
 
 
-// 1. Apply authLimiter STRICTLY on /api/auth FIRST!
-app.use('/api/auth', authLimiter, loginRoute);
 
 // 2. Then apply apiLimiter on ALL other /api/ routes
 // app.use('/api/', apiLimiter);
