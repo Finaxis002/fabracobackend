@@ -91,20 +91,20 @@ function authenticateToken(req, res, next) {
 // API Route
 // app.use('/api/', apiLimiter); // only for API, not for static files
 app.use('/api/cases', caseRoutes);
-app.use('/api/users',authenticateToken, userRoutes);
-app.use("/api/owners",authenticateToken, ownerRoutes);
-app.use("/api/clients",authenticateToken, clientRoutes);
-// app.use('/api/auth',authenticateToken, authLimiter,authenticateToken, loginRoute);
-app.use("/api/notifications",authenticateToken, notificationRoute)
-app.use("/api/services",authenticateToken, serviceRoute);
+app.use('/api/users', userRoutes);
+app.use("/api/owners", ownerRoutes);
+app.use("/api/clients", clientRoutes);
+// app.use('/api/auth', authLimiter, loginRoute);
+app.use("/api/notifications", notificationRoute)
+app.use("/api/services", serviceRoute);
 app.use("/api/cases/:caseId/services", remarkRoute);
-app.use("/api/roles",authenticateToken, roleRoute);
+app.use("/api/roles", roleRoute);
 app.use("/api/remarks", recentRemarksRoute);
-app.use("/api/chats",authenticateToken, chatRoute);
-app.use("/api/settings",authenticateToken, settingsRoutes);
+app.use("/api/chats", chatRoute);
+app.use("/api/settings", settingsRoutes);
 app.use("/api/tags", tagsRoute);
 app.use('/api/pushnotifications', pushNotificationRoutes);
-app.use('/ap/admin',authenticateToken, superAdminRoute);
+app.use('/ap/admin', superAdminRoute);
 
 
 
@@ -114,7 +114,7 @@ app.use(express.static(path.join(__dirname, "client")));
 
 
 app.get("/", (req, res) => {
-  res.send("FCA - Franchise Compliance Automation Backend API is running - fixes");
+  res.send("FCA - Fabrico Backend is running");
 });
 
 
@@ -136,7 +136,6 @@ app.use((err, req, res, next) => {
 async function startServer() {
   try {
     await connectDB(); // connect only once here
-    await seedDefaultServices();
     const server = http.createServer(app);
     const { io } = initSocket(server);
     app.set("io", io); // make io available in routes

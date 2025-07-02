@@ -50,63 +50,6 @@ router.get("/:serviceId", async (req, res) => {
 });
 
 
-// POST /api/cases/:caseId/services/:serviceId/remarks
-// router.post("/:serviceId/remarks", authMiddleware, async (req, res) => {
-//   const { caseId, serviceId } = req.params;
-//   const { userId, userName, remark } = req.body;
-
-//   if (!remark || !userId || !userName) {
-//     return res.status(400).json({ message: "Missing required fields." });
-//   }
-
-//   try {
-//     // Save the remark first
-//     const newRemark = new Remark({
-//       caseId,
-//       serviceId,
-//       userId,
-//       userName,
-//       remark,
-//       readBy: [userId], // <-- Add userId here on creation
-//     });
-//     await newRemark.save();
-
-//      // 2. Update the case document to add the new remark's _id to the service's remarks array
-//     const updatedCase = await Case.findOneAndUpdate(
-//       { _id: caseId, "services.id": serviceId },  // Find the case and service
-//       {
-//         $push: { "services.$.remarks": newRemark._id },  // Add the remark's _id to the service's remarks
-//         $set: { lastUpdate: new Date() },  // Optionally update the lastUpdate field for the case
-//       },
-//       { new: true }
-//     );
-
-//     if (!updatedCase) {
-//       return res.status(404).json({ message: "Case or service not found." });
-//     }
-
-//     // Fetch the case to get assigned users
-//     const caseData = await Case.findById(caseId).select(
-//       "assignedUsers unitName"
-//     );
-
-//     if (!caseData) {
-//       return res
-//         .status(404)
-//         .json({ message: "Case not found for notification." });
-//     }
-
-    
-
-//     res.status(201).json(newRemark);
-//   } catch (error) {
-//     console.error("Failed to save remark or send notifications:", error);
-//     res
-//       .status(500)
-//       .json({ message: "Failed to save remark and send notifications." });
-//   }
-// });
-
 router.post("/:serviceId/remarks", authMiddleware, async (req, res) => {
   const { caseId, serviceId } = req.params;
   const { userId, userName, remark } = req.body;

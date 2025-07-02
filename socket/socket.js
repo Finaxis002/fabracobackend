@@ -9,7 +9,7 @@ function initSocket(server) {
   const io = new Server(server, {
     cors: {
       origin: [
-        "http://localhost:9002", // for local dev frontend (adjust port if needed)
+        "http://localhost:6252", // for local dev frontend (adjust port if needed)
         "https://fco.onrender.com",
         "https://tumbledry.sharda.co.in",
       ],
