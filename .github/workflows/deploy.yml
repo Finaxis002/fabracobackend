@@ -1,22 +1,35 @@
-name: Deploy Backend
+name: Deploy Backend to VPS
 
 on:
   push:
-    branches:
-      - main  # or your branch
+    branches: [main]    # or your default branch
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-    - name: SSH & Pull + Restart
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.SERVER_IP }}
-        username: ${{ secrets.SERVER_USER }}
-        key: ${{ secrets.SERVER_SSH_KEY }}
-        script: |
-          cd /home/fabracobackend
-          git pull origin main
-          npm install
-          pm2 restart fabracobe-backend
+      - uses: actions/checkout@v4
+
+      - name: Install SSH key
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add SSH Host Key to Known Hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+
+      - name: Rsync Project to VPS
+        run: |
+          rsync -avz --delete ./ root@${{ secrets.SERVER_IP }}:/home/fabracobackend
+
+      - name: Restart backend with PM2
+        run: |
+          ssh root@${{ secrets.SERVER_IP }} << 'EOF'
+            cd /home/fabracobackend
+            npm install
+            pm2 restart fabracobe-backend || pm2 start server.js --name fabracobe-backend
+            pm2 save
+          EOF
