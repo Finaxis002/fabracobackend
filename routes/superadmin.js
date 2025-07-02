@@ -35,9 +35,9 @@ router.post("/reset-password", async (req, res) => {
     // Email details
     const username = admin.adminId;
     const mailOptions = {
-      from: '"FCA Software" <shardaassociates.in@gmail.com>',
+      from: '"FCA-Fabraco Software" <shardaassociates.in@gmail.com>',
       to: "caanunaysharda@gmail.com",
-      subject: "🔐 Admin Password Changed - FCA  Software Notification",
+      subject: "🔐 Admin Password Changed - FCA-Fabraco Software Notification",
       text: `The admin password for ${username} has been changed successfully.`,
       html: `
         <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
