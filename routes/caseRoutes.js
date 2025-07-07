@@ -31,27 +31,71 @@ router.get('/:caseId/messages', async (req, res) => {
 });
 
 // PATCH /api/cases/:caseId/services/:serviceId/status
+// router.patch("/:caseId/services/:serviceId/status", authMiddleware, async (req, res) => {
+//   const { caseId, serviceId } = req.params;
+//   const { status } = req.body;
+//   if (!status) return res.status(400).json({ message: "Missing status" });
+
+//   try {
+//     const updated = await Case.findOneAndUpdate(
+//       { _id: caseId, "services._id": serviceId },
+//       { $set: { "services.$.status": status, lastUpdate: new Date() } },
+//       { new: true }
+//     );
+//     if (!updated) return res.status(404).json({ message: "Case/Service not found" });
+
+//     res.json({
+//       message: "Service status updated",
+//       case: updated
+//     });
+//   } catch (err) {
+//     res.status(500).json({ message: "Error updating status", error: err.message });
+//   }
+// });
+
+
+// ...existing code...
 router.patch("/:caseId/services/:serviceId/status", authMiddleware, async (req, res) => {
   const { caseId, serviceId } = req.params;
   const { status } = req.body;
   if (!status) return res.status(400).json({ message: "Missing status" });
 
   try {
-    const updated = await Case.findOneAndUpdate(
+    // Update the service status
+    const updatedCase = await Case.findOneAndUpdate(
       { _id: caseId, "services._id": serviceId },
       { $set: { "services.$.status": status, lastUpdate: new Date() } },
       { new: true }
     );
-    if (!updated) return res.status(404).json({ message: "Case/Service not found" });
+    if (!updatedCase) return res.status(404).json({ message: "Case/Service not found" });
+
+    // Recalculate overall status and completion percentage
+    const total = updatedCase.services.length;
+    const completed = updatedCase.services.filter(s => s.status === "Completed").length;
+    let overallStatus = updatedCase.status;
+    if (completed === total && total > 0) {
+      overallStatus = "Completed";
+    } else if (updatedCase.services.some(s => s.status === "In-Progress")) {
+      overallStatus = "In-Progress";
+    } else {
+      overallStatus = "New-Case";
+    }
+    const overallCompletionPercentage = total === 0 ? 50 : Math.min(50 + (completed * 50) / total, 100);
+
+    updatedCase.status = overallStatus;
+    updatedCase.overallStatus = overallStatus;
+    updatedCase.overallCompletionPercentage = overallCompletionPercentage;
+    await updatedCase.save();
 
     res.json({
       message: "Service status updated",
-      case: updated
+      case: updatedCase
     });
   } catch (err) {
     res.status(500).json({ message: "Error updating status", error: err.message });
   }
 });
+// ...existing code...
 
 
 
