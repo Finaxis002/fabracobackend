@@ -7,7 +7,7 @@ const router = express.Router();
 router.get("/app-name", async (req, res) => {
   try {
     const setting = await Settings.findOne({ key: "appName" });
-    res.json({ appName: setting?.value || "FranchiseFlow" });
+    res.json({ appName: setting?.value || "Waasle" });
   } catch (error) {
     console.error("Error fetching app name:", error);
     res.status(500).json({ error: "Failed to fetch app name" });
