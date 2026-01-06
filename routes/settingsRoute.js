@@ -7,7 +7,18 @@ const router = express.Router();
 router.get("/app-name", async (req, res) => {
   try {
     const setting = await Settings.findOne({ key: "appName" });
-    res.json({ appName: setting?.value || "Waasle" });
+    if (!setting) {
+      // If the app name is not set in the database, set it to "Waasle"
+      await Settings.create({ key: "appName", value: "Waasle" });
+      res.json({ appName: "Waasle" });
+    } else {
+      // If the app name is set but not "Waasle", update it to "Waasle"
+      if (setting.value !== "Waasle") {
+        setting.value = "Waasle";
+        await setting.save();
+      }
+      res.json({ appName: "Waasle" });
+    }
   } catch (error) {
     console.error("Error fetching app name:", error);
     res.status(500).json({ error: "Failed to fetch app name" });
