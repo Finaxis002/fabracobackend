@@ -15,28 +15,52 @@ router.post("/login", async (req, res) => {
   );
 
   try {
-    const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY;
-    const verifyRes = await axios.post(
-      `https://www.google.com/recaptcha/api/siteverify`,
-      null,
-      {
-        params: {
-          secret: recaptchaSecret,
-          response: recaptchaToken,
-        },
-      }
-    );
+    // Validate reCAPTCHA - skip if manual captcha is used
+    if (recaptchaToken === "manual-captcha-verified") {
+      console.log("✅ Manual CAPTCHA verified, skipping Google reCAPTCHA");
+    } else if (recaptchaToken) {
+      // Only verify with Google if it's NOT manual captcha
+      const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY;
 
-    if (!verifyRes.data.success) {
-      console.log("reCAPTCHA failed:", verifyRes.data);
-      return res.status(400).json({ message: "Failed reCAPTCHA validation" });
+      try {
+        const verifyRes = await axios.post(
+          `https://www.google.com/recaptcha/api/siteverify`,
+          null,
+          {
+            params: {
+              secret: recaptchaSecret,
+              response: recaptchaToken,
+            },
+          }
+        );
+
+        if (!verifyRes.data.success) {
+          console.log("reCAPTCHA failed:", verifyRes.data);
+          return res
+            .status(400)
+            .json({ message: "Failed reCAPTCHA validation" });
+        }
+      } catch (recaptchaErr) {
+        console.error("reCAPTCHA verification error:", recaptchaErr);
+        return res.status(400).json({ message: "CAPTCHA verification failed" });
+      }
+    } else {
+      // No captcha token provided
+      return res.status(400).json({ message: "CAPTCHA token required" });
     }
 
     // Handle admin login
     if (isAdminLogin) {
       const admin = await Admin.findOne({ adminId: userId });
 
-      if (!admin || !(await bcrypt.compare(password, admin.password))) {
+      if (!admin) {
+        console.log(`Admin not found: ${userId}`);
+        return res.status(401).json({ message: "Invalid admin credentials" });
+      }
+
+      const isPasswordValid = await bcrypt.compare(password, admin.password);
+      if (!isPasswordValid) {
+        console.log(`Invalid password for admin: ${userId}`);
         return res.status(401).json({ message: "Invalid admin credentials" });
       }
 
@@ -45,6 +69,8 @@ router.post("/login", async (req, res) => {
         process.env.JWT_SECRET,
         { expiresIn: "7d" }
       );
+
+      console.log(`Admin login successful: ${userId}`);
 
       return res.json({
         token,
@@ -57,21 +83,33 @@ router.post("/login", async (req, res) => {
       });
     }
 
-    // Handle regular user login (existing code)
+    // Handle regular user login
     const user = await User.findOne({ userId }).select("+password");
-    if (!user || !(await bcrypt.compare(password, user.password))) {
+
+    if (!user) {
+      console.log(`User not found: ${userId}`);
       return res.status(401).json({ message: "Invalid user ID or password" });
     }
 
-     if (isAdminLogin && user.role !== "Admin") {
-    return res.status(401).json({ message: "Not an admin account" });
-  }
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      console.log(`Invalid password for user: ${userId}`);
+      return res.status(401).json({ message: "Invalid user ID or password" });
+    }
+
+    // Check if trying to login as admin but user is not an admin
+    if (isAdminLogin && user.role !== "Admin") {
+      console.log(`Non-admin user tried admin login: ${userId}`);
+      return res.status(401).json({ message: "Not an admin account" });
+    }
 
     const token = jwt.sign(
       { id: user._id, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
+
+    console.log(`User login successful: ${userId}, role: ${user.role}`);
 
     res.json({
       token,
